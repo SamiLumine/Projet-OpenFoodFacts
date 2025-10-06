@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Recherche de produit et Panier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            max-width: 900px;
+            margin: auto;
+        }
+        .left, .right {
+            width: 48%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 80%;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .product-info img {
+            max-width: 100px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .cart-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            background: #fff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s;
+        }
+        .cart-item:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .cart-info {
+            flex-grow: 1;
+        }
+        .cart-info p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .nutri-score {
+            font-weight: bold;
+            color: #28a745;
+        }
+        .remove-btn {
+            background-color: #dc3545;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            align-self: flex-end;
+        }
+        .remove-btn:hover {
+            background-color: #c82333;
+        }
+        .quantity-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .quantity-controls button {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        .quantity-controls input {
+            width: 40px;
+            text-align: center;
+            padding: 5px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Recherche de produit et Panier</h1>
+
+<div class="container">
+    <div class="left">
+        <h2>Rechercher un produit</h2>
+        <form action="/main" method="post">
+            <input type="text" id="barcode" name="barcode" required placeholder="Entrez un code-barres">
+            <button type="submit">Rechercher</button>
+        </form>
+
+        <div th:if="${energy != null}" class="product-info">
+            <h3>Détails du produit</h3>
+            <p><strong>Énergie :</strong> <span th:text="${energy}"></span> kcal</p>
+            <p><strong>Sucres :</strong> <span th:text="${sugars}"></span> g</p>
+            <p><strong>Fibres :</strong> <span th:text="${fibers}"></span> g</p>
+            <p><strong>Protéines :</strong> <span th:text="${proteins}"></span> g</p>
+            <p><strong>Sel :</strong> <span th:text="${salt}"></span> g</p>
+            <p><strong>Graisses saturées :</strong> <span th:text="${saturatedFat}"></span> g</p>
+            <p><strong>Nutri-Score :</strong> <span th:text="${nutriScore}"></span></p>
+            <p>
+                <strong>Classe alimentaire :</strong>
+                <span th:text="${foodClass}" th:style="'color:' + ${foodColor}"></span>
+            </p>
+            <img th:src="${imageUrl}" alt="Image du produit" />
+
+            <form action="/add-to-cart" method="post">
+                <input type="hidden" name="barcode" th:value="${barcode}">
+
+                <div class="quantity-controls">
+                    <button type="button" onclick="updateQuantity(-1)">-</button>
+                    <input type="number" name="quantity" id="quantity" value="1" min="1" readonly>
+                    <button type="button" onclick="updateQuantity(1)">+</button>
+                </div>
+
+                <input type="hidden" name="quantity" id="hiddenQuantity" value="1">
+
+                <button type="submit">Ajouter au panier</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="right">
+        <h2>Votre Panier</h2>
+        <p><strong>Utilisateur :</strong> <span th:text="${userEmail}"></span></p>
+
+        <ul th:if="${cartProductsWithQuantity != null and not #lists.isEmpty(cartProductsWithQuantity)}">
+            <li th:each="item : ${cartProductsWithQuantity}" class="cart-item">
+                <div class="cart-info">
+                    <p><strong th:text="${item.product.name}"></strong></p>
+                    <p>Code-barres : <span th:text="${item.product.barcode}"></span></p>
+                    <p>Quantité : <span th:text="${item.quantity}"></span> x</p>
+                    <p class="nutri-score">Nutri-Score : <span th:text="${item.product.nutritionScore}"></span></p>
+                </div>
+                <form action="/remove-from-cart" method="post">
+                    <input type="hidden" name="barcode" th:value="${item.product.barcode}">
+                    <button class="remove-btn" type="submit">Supprimer</button>
+                </form>
+            </li>
+        </ul>
+
+        <div th:if="${cartProductsWithQuantity != null and not #lists.isEmpty(cartProductsWithQuantity)}" class="average-nutri-score">
+            <h3>Moyenne des Nutri-Scores :</h3>
+            <p id="averageNutriScore">Calcul en cours...</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function updateQuantity(delta) {
+        var quantityInput = document.getElementById('quantity');
+        var hiddenQuantityInput = document.getElementById('hiddenQuantity');
+        var currentQuantity = parseInt(quantityInput.value);
+        var newQuantity = currentQuantity + delta;
+        if (newQuantity < 1) {
+            newQuantity = 1;
+        }
+        quantityInput.value = newQuantity;
+        hiddenQuantityInput.value = newQuantity;
+    }
+
+    // Cette fonction calcule la moyenne des Nutri-Scores des produits dans le panier
+    function calculerMoyenneNutriScore() {
+        // Récupère tous les éléments contenant les Nutri-Scores
+        const nutriScores = document.querySelectorAll('.nutri-score span');
+        let sommeNutriScores = 0;
+
+        // Parcourt tous les Nutri-Scores et les additionne
+        nutriScores.forEach(function(scoreElement) {
+            let score = parseFloat(scoreElement.textContent.trim());
+            if (!isNaN(score)) {
+                sommeNutriScores += score;
+            }
+        });
+
+        // Calcule la moyenne
+        const nombreDeProduits = nutriScores.length;
+        const moyenne = nombreDeProduits > 0 ? (sommeNutriScores / nombreDeProduits) : 0;
+
+        // Affiche la moyenne dans l'élément HTML
+        const moyenneElement = document.getElementById('averageNutriScore');
+        moyenneElement.textContent = `La moyenne des Nutri-Scores est : ${moyenne.toFixed(2)}`;
+    }
+
+    // Appel de la fonction dès que la page est chargée
+    window.onload = function() {
+        // Vérifier si le panier contient des produits avant de calculer la moyenne
+        if (document.querySelectorAll('.cart-item').length > 0) {
+            calculerMoyenneNutriScore();
+        }
+    };
+</script>
+
+</body>
+</html>
