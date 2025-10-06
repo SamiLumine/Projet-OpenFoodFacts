@@ -1,4 +1,4 @@
-# Projet Yaku
+# Projet Open Food Facts
 
 ## Description
 
